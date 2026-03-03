@@ -44,7 +44,9 @@ if submitted:
         df = pd.read_csv(working_file, nrows=0)
         actual_headers = list(df.columns)
         has_valid_headers = (actual_headers == expected_headers)
-    except:
+    except pd.errors.EmptyDataError:
+        has_valid_headers = False
+    except Exception as e:
         has_valid_headers = False
     if has_valid_headers:
         mode = 'a'
@@ -52,15 +54,15 @@ if submitted:
     else:
         mode = 'w'
         write_headers = True
-    with open(working_file, mode, newline='') as f:
-        csv_writer = csv.writer(f, delimiter=',')
-        if write_headers:
-            csv_writer.writerow(expected_headers)
-        csv_writer.writerow(new_entry.values())
-    st.success(f"You successfully tracked Data into {working_file} today!")
-    st.info(f"Submit count: {st.session_state.counter} times")
-    st.write(f"## This is header")
-    st.write(f"### This is a subheader")
-    st.write(f"**This is BOLD**")
-    st.write(f"*This will be ITALIC*")
-    st.write(f"- This is a POINT ")
+    try:
+        with open(working_file, mode, newline='') as f:
+            csv_writer = csv.writer(f, delimiter=',')
+            if write_headers:
+                csv_writer.writerow(expected_headers)
+            csv_writer.writerow(new_entry.values())
+        st.success(f"You successfully tracked Data into {working_file} today!")
+        st.info(f"Submit count: {st.session_state.counter} times")
+    except PermissionError:
+        st.error("Can't write to file, Permission denied")
+    except Exception as e:
+        st.error(f"Unexpected error: {e}")
