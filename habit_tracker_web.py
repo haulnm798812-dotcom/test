@@ -6,77 +6,52 @@ import csv
 # Rows: Records
 # Columns: Attributes
 st.set_page_config(page_title="Habit Tracker", page_icon=":DDD")
-working_file = "skibidi.csv"
+if "counter" not in st.session_state:
+    st.session_state.counter = 0
 st.title("Daily Habit Tracker")
 st.markdown("### Keep track on your Sleep, Work & Habit!")
 st.header("Log today's habit")
 file_form = st.form("habit tracker")
-if "counter" not in st.session_state:
-    st.session_state.counter = 0
-with file_form:
-    todate = st.date_input("Date", value=date.today())
-    sleep_hrs = st.number_input("Sleep hours",
-                                min_value=0,
-                                max_value=24,
-                                help="Put in today's sleep hours")
-    work_hrs = st.number_input("Work hours",
-                               min_value=0,
-                               max_value=24 - sleep_hrs,
-                               help="Put in today's work hours")
-    hab_done = st.text_input("Main Habit?",
-                             placeholder="for ex: Gym, Reading, Gaming, Cooking, etc",
-                             help="What you did in free time")
-    submitted = st.form_submit_button("Submit here")
 
-if submitted:
-    st.write("---")
-    st.session_state.counter += 1
-    need_fix = False
+# Func1
 
-    def need_changes(habit, sleep_hrs, work_hrs):
-        try:
-            if habit.strip() == "" or habit.isdigit():
-                need_fix = True
-            elif sleep_hrs + work_hrs >= 24:
-                need_fix = True
-        except ValueError:
-            st.error("Incorrect type of value")
-            need_fix = True
-        except Exception:
-            st.error("Can't run this command")
-            need_fix = True
-            if need_fix:
-                advice = st.error("Change your values")
-        return need_fix, advice
-    new_entry = {
-        "Date": todate,
-        "Sleep hours": sleep_hrs,
-        "Work hours": work_hrs,
-        "Habit": hab_done.capitalize()
-    }
-    need_changes(new_entry['Habit'],
-                 new_entry['Sleep hours'], new_entry['Work hours'])
-    expected_headers = list(new_entry.keys())
-    """Checks if current headers MATCHES with the expected headers --> return bool"""
-    has_valid_headers = False
 
-    def check_headers(file_path, expected_headers):
-        try:
-            df = pd.read_csv(file_path, nrows=0)
-            current_headers = list(df.columns)
-            has_valid_headers = (current_headers == expected_headers)
-        except FileNotFoundError:
-            has_valid_headers = False
-        except pd.errors.EmptyDataError:
-            has_valid_headers = False
-        except Exception:
-            has_valid_headers = False
-        return has_valid_headers
-    write_headers = False
+def validate_data(habit, sleep_hrs, work_hrs):
+    if habit.strip() == "" or habit.isdigit():
+        return False, "Wrong type of Habit"
+    if work_hrs + sleep_hrs > 24:
+        return False, f"Work hours and Sleep hours must be <= 24"
+    if work_hrs < 0 or sleep_hrs < 0:
+        return False, "Work & Sleep hours must be > 0"
+    return True, ""
 
-    def save_entry_data(new_data, file_path):
-        new_data = new_entry.keys()
-        if check_headers(working_file, expected_headers):
+
+# Func2
+
+
+def check_headers(file_path, expected_headers):
+    try:
+        df = pd.read_csv(file_path, nrows=0)
+        current_headers = list(df.columns)
+        return current_headers == expected_headers
+    except FileNotFoundError:
+        return False
+    except pd.errors.EmptyDataError:
+        return False
+    except Exception:
+        return False
+
+# Func3
+
+
+insert_success = True
+
+
+def save_entry_data(new_data, file_path):
+    new_data = new_data.values()
+    has_valid_headers = check_headers(file_path, expected_headers)
+    try:
+        if has_valid_headers:
             mode = 'a'
             write_headers = False
         else:
@@ -87,7 +62,52 @@ if submitted:
             if write_headers:
                 csv_writer.writerow(expected_headers)
             csv_writer.writerow(new_data)
-        return new_data, file_path
-    inform_data = save_entry_data(new_entry, working_file)
-    st.success(f"You successfully tracked Data into {working_file} today!")
-    st.info(f"Submit count: {st.session_state.counter} times")
+            return True, f"Data saved to {working_file}"
+    except PermissionError as e:
+        return False, "Permission denied"
+    except Exception as e:
+        return False, f"Unexpected error: {e}"
+
+
+with file_form:
+    todate = st.date_input("Date", value=date.today())
+    sleep_hrs = st.number_input("Sleep hours",
+                                min_value=0,
+                                max_value=24,
+                                help="Put in today's sleep hours")
+    work_hrs = st.number_input("Work hours",
+                               min_value=0,
+                               max_value=24,
+                               help="Put in today's work hours")
+    hab_done = st.text_input("Main Habit?",
+                             placeholder="for ex: Gym, Reading, Gaming, Cooking, etc",
+                             help="What you did in free time")
+    submitted = st.form_submit_button("Submit here")
+
+if submitted:
+    st.write("---")
+    st.session_state.counter += 1
+    is_valid, advice = validate_data(
+        hab_done, sleep_hrs, work_hrs)
+
+    if not is_valid:
+        st.error(f"{advice}")
+        st.stop()
+
+    new_entry = {
+        "Date": todate,
+        "Sleep hours": sleep_hrs,
+        "Work hours": work_hrs,
+        "Habit": hab_done.capitalize()
+    }
+
+    expected_headers = list(new_entry.keys())
+    has_valid_headers = check_headers(working_file, expected_headers)
+    insert_success, comment = save_entry_data(new_entry, working_file)
+    if insert_success:
+        st.success(comment)
+        st.info(f"Submit count: {st.session_state.counter} times")
+
+    else:
+        st.error(comment)
+        st.stop()
