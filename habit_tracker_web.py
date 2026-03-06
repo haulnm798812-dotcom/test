@@ -6,6 +6,7 @@ import csv
 # Rows: Records
 # Columns: Attributes
 st.set_page_config(page_title="Habit Tracker", page_icon=":DDD")
+working_file = "ADD YOUR FILE HERE"
 if "counter" not in st.session_state:
     st.session_state.counter = 0
 st.title("Daily Habit Tracker")
@@ -42,9 +43,6 @@ def check_headers(file_path, expected_headers):
         return False
 
 # Func3
-
-
-insert_success = True
 
 
 def save_entry_data(new_data, file_path):
