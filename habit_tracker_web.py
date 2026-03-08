@@ -5,8 +5,8 @@ from datetime import date
 import csv
 # Rows: Records
 # Columns: Attributes
-st.set_page_config(page_title="Habit Tracker", page_icon=":DDD")
-working_file = "ADD YOUR FILE HERE"
+st.set_page_config(page_title="Habit Tracker", page_icon="📊")
+working_file = """Place your .csv file here"""
 if "counter" not in st.session_state:
     st.session_state.counter = 0
 st.title("Daily Habit Tracker")
