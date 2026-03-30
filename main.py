@@ -1,4 +1,7 @@
-import pandas as pd
-import csv
-df = pd.read_csv("habittracker.txt", index_col=False)
-df.to_csv("habittracker.csv", index=False)
+try:
+    if float(habit.strip()):
+        return False, "habit mustnot be a number"
+except ValueError:
+    pass
+if habit.strip() != "":
+    return True, None
