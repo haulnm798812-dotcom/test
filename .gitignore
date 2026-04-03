@@ -2,4 +2,5 @@ env/
 .env
 *.pyc
 *.csv
+data/(folder)*.json == "Every FILES INSIDE of the 'DATA' FOLDER and ENDS with ''.json'."
 __pycache__/
