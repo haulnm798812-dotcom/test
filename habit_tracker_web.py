@@ -1,8 +1,7 @@
 import os
 # fmt: off
 os.add_dll_directory(
-    r'C:\learn_py\learn\env\Lib\site-packages\clidriver\bin'
-)
+    r'C:\learn_py\learn\env\Lib\site-packages\clidriver\bin')
 import ibm_db
 import ibm_db_dbi
 # fmt: on
@@ -47,6 +46,8 @@ def validate_data(habit, sleep_hrs, work_hrs):
     return True, ""
 
 
+
+
 #Func2 KEEP: connect to the Database.
 @st.cache_resource 
 def get_connection():
@@ -58,7 +59,8 @@ def get_connection():
             f"PROTOCOL=TCPIP;"
             f"UID={DB2_USERNAME};"
             f"PWD={DB2_PASSWORD};"
-            f"SECURITY=SSL")
+            f"SECURITY=SSL;"
+            f"AUTHENTICATION=DIRECT")
         ibm_conn = ibm_db.connect(dsn,"","")
         return ibm_db_dbi.Connection(ibm_conn), ibm_conn
     except Exception as e:
@@ -108,7 +110,7 @@ def insert_habits(ibm_conn, log_date, sleep_hrs, work_hrs, habit):
         return False, str(e)
     
 try:
-    conn, ibm_conn = get_connection()
+    _, ibm_conn = get_live_connection()
     ensure_table_exists(ibm_conn)
 except Exception as e:
     st.error(str(e))
@@ -119,27 +121,24 @@ if "counter" not in st.session_state:
 st.title("Daily Habit Tracker")
 st.markdown("### Keep track on your Sleep, Work & Habit!")
 st.header("Log today's habit")
-file_form = st.form("habit tracker")
-
-with file_form:
+with st.form("habit tracker"):
     todate = st.date_input("Date", value=datetime.today())
     sleep_hrs = st.number_input("Sleep hours",
-                                min_value=0.0,
-                                max_value=24.0,
-                                format="0.1f",
+                                min_value=00,
+                                max_value=24,
                                 help="Put in today's sleep hours")
     work_hrs = st.number_input("Work hours",
-                               min_value=0.0,
-                               max_value=24.0,
-                               format="0.1f",
+                               min_value=00,
+                               max_value=24,
                                help="Put in today's work hours")
     hab_done = st.text_input("Main Habit?",
                              placeholder="for ex: Gym, Reading, Gaming, Cooking, etc",
                              help="What you did in free time")
-    submitted = st.form_submit_button("Submit here")
+    submitted = st.form_submit_button(f"Click here to Submit")
 if submitted:
     st.write("---")
     st.session_state.counter += 1
+    conn, ibm_conn = get_live_connection()
     is_valid, advice = validate_data(
         hab_done, sleep_hrs, work_hrs)
     if not is_valid:
